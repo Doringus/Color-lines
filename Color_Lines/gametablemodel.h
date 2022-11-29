@@ -5,6 +5,9 @@
 
 class GameTableModel : public QAbstractItemModel {
     Q_OBJECT
+
+    Q_PROPERTY(int rowsCount MEMBER m_RowsCount)
+    Q_PROPERTY(int columnsCount MEMBER m_ColumnsCount)
 public:
 
     enum Roles {
@@ -23,7 +26,10 @@ public:
     QModelIndex parent(const QModelIndex& index) const override;
 
 signals:
+
 private:
+    int m_RowsCount, m_ColumnsCount;
     QHash<int, QByteArray> m_RoleNames;
+
 };
 

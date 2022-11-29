@@ -1,17 +1,17 @@
 #include "gametablemodel.h"
 
-GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent) {
+GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent), m_RowsCount(9), m_ColumnsCount(9) {
     m_RoleNames[IconRole] = "icon";
 }
 
 int GameTableModel::rowCount(const QModelIndex& parent) const noexcept {
     Q_UNUSED(parent);
-    return 3;
+    return m_RowsCount;
 }
 
 int GameTableModel::columnCount(const QModelIndex& parent) const noexcept {
     Q_UNUSED(parent)
-    return 3;
+    return m_ColumnsCount;
 }
 
 QVariant GameTableModel::data(const QModelIndex& index, int role) const {

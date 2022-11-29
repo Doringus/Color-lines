@@ -14,7 +14,8 @@ Window {
         width: 640
         height: 480
         model: GameTableModel {
-
+            rowsCount: 9
+            columnsCount: 9
         }
     }
 }
