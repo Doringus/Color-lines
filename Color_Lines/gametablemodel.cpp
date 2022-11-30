@@ -1,11 +1,11 @@
 #include "gametablemodel.h"
 
 GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent), m_RowsCount(ROWS_COUNT), m_ColumnsCount(COLUMNS_COUNT) {
-    m_IsFirstClick = true;
+    m_SelectedBall = 0;
     m_RoleNames[IconRole] = "icon";
-    m_BallImagePaths << "qrc:/res/black.png" << "qrc:/res/red.png" << "qrc:/res/yellow.png" << "";
+    m_BallImagePaths << "" << "qrc:/res/black.png" << "qrc:/res/red.png" << "qrc:/res/yellow.png";
 
-    const int emptyImageIndex = m_BallImagePaths.size() - 1;
+    const int emptyImageIndex = 0;
     QList<int> column;
     column.reserve(m_ColumnsCount);
     for(int row = 0; row < m_RowsCount; ++row) {
@@ -16,7 +16,7 @@ GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent), m_
         column.clear();
     }
     // Place initial balls
-    placeBalls(generateBallsForComputerTurn());
+    computerTurn(generateBallsForComputerTurn());
 }
 
 int GameTableModel::rowCount(const QModelIndex& parent) const noexcept {
@@ -56,44 +56,48 @@ QModelIndex GameTableModel::parent(const QModelIndex& index) const {
 }
 
 void GameTableModel::cellClicked(int row, int column) {
-    if(m_IsFirstClick) {
-        // пользователь выбирает ячейку
-        m_IsFirstClick = !m_IsFirstClick;
+    if(m_SelectedBall != 0 && m_Data.at(row).at(column) == 0) {
+        placeBall(row, column, m_SelectedBall);
+        // Check if we can move ball
+        // Move ball
+        // Check lines
+        // Computer make turn
+        computerTurn(generateBallsForComputerTurn());
+        m_SelectedBall = 0;
     } else {
-        // шар перемещается, компьютер делает ход
-        m_IsFirstClick = !m_IsFirstClick;
-        placeBalls(generateBallsForComputerTurn());
+        m_SelectedBall = m_Data.at(row).at(column);
     }
-
 }
 
-void GameTableModel::placeBalls(const QList<int>& balls) noexcept {
+void GameTableModel::placeBall(int row, int col, int ball) noexcept {
+    m_Data[row][col] = ball;
+    auto index = createIndex(row, col);
+    emit dataChanged(index, index, {IconRole});
+}
+
+void GameTableModel::computerTurn(const QList<int>& balls) noexcept {
     QList<QPair<int, int>> freeCells = getFreeCellsIndices();
     std::for_each(balls.begin(), balls.end(), [this, &freeCells](const int& ball){
         int cellIndex = m_RandomGenerator.generate(0, freeCells.size() - 1);
         const int row = freeCells.at(cellIndex).first;
         const int col = freeCells.at(cellIndex).second;
-        m_Data[freeCells.at(cellIndex).first][freeCells.at(cellIndex).second] = ball;
+        placeBall(row, col, ball);
         freeCells.removeAt(cellIndex);
-
-        auto index = createIndex(row, col);
-        emit dataChanged(index, index, {IconRole});
     });
 }
 
 QList<int> GameTableModel::generateBallsForComputerTurn() noexcept {
     QList<int> balls;
-    const int emptyImageIndex = m_BallImagePaths.size() - 1;
     const int ballsToPlace = 3;
     for(int i = 0; i < ballsToPlace; ++i) {
-        balls.append(m_RandomGenerator.generate(0, emptyImageIndex - 1));
+        balls.append(m_RandomGenerator.generate(1, m_BallImagePaths.size() - 1));
     }
     return balls;
 }
 
 QList<QPair<int, int>> GameTableModel::getFreeCellsIndices() const noexcept {
     QList<QPair<int, int>> freeCellsIndices;
-    const int emptyImageIndex = m_BallImagePaths.size() - 1;
+    const int emptyImageIndex = 0;
 
     for(int row = 0; row < m_RowsCount; ++row) {
         for(int col = 0; col < m_ColumnsCount; ++col) {

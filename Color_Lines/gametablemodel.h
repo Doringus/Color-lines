@@ -29,8 +29,9 @@ public:
 
     Q_INVOKABLE void cellClicked(int row, int column);
 
+    void placeBall(int row, int col, int ball) noexcept;
 private:
-    void placeBalls(const QList<int>& balls) noexcept;
+    void computerTurn(const QList<int>& balls) noexcept;
     QList<int> generateBallsForComputerTurn() noexcept;
     QList<QPair<int, int>> getFreeCellsIndices() const noexcept;
 
@@ -38,7 +39,7 @@ signals:
 
 private:
     int m_RowsCount, m_ColumnsCount;
-    bool m_IsFirstClick;
+    int m_SelectedBall;
     QList<QList<int>> m_Data;
     QStringList m_BallImagePaths;
     QHash<int, QByteArray> m_RoleNames;
