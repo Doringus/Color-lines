@@ -1,7 +1,19 @@
 #include "gametablemodel.h"
 
-GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent), m_RowsCount(9), m_ColumnsCount(9) {
+GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent), m_RowsCount(ROWS_COUNT), m_ColumnsCount(COLUMNS_COUNT) {
     m_RoleNames[IconRole] = "icon";
+    m_BallImagePaths << "qrc:/res/black.png" << "qrc:/res/red.png" << "qrc:/res/yellow.png" << "";
+
+    int emptyImageIndex = m_BallImagePaths.size() - 1;
+    QList<int> column;
+    column.reserve(m_ColumnsCount);
+    for(int row = 0; row < m_RowsCount; ++row) {
+        for(int col = 0; col < m_ColumnsCount; ++col) {
+            column.append(emptyImageIndex);
+        }
+        m_Data.append(column);
+        column.clear();
+    }
 }
 
 int GameTableModel::rowCount(const QModelIndex& parent) const noexcept {
@@ -20,7 +32,7 @@ QVariant GameTableModel::data(const QModelIndex& index, int role) const {
     }
     switch (role) {
         case IconRole: {
-            return 1;
+            return m_BallImagePaths.at(m_Data.at(index.row()).at(index.column()));
         }
     }
     return 0;

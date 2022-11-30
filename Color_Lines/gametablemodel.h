@@ -3,11 +3,11 @@
 #include <QObject>
 #include <QAbstractItemModel>
 
+constexpr int ROWS_COUNT = 9;
+constexpr int COLUMNS_COUNT = 9;
+
 class GameTableModel : public QAbstractItemModel {
     Q_OBJECT
-
-    Q_PROPERTY(int rowsCount MEMBER m_RowsCount)
-    Q_PROPERTY(int columnsCount MEMBER m_ColumnsCount)
 public:
 
     enum Roles {
@@ -29,7 +29,8 @@ signals:
 
 private:
     int m_RowsCount, m_ColumnsCount;
+    QList<QList<int>> m_Data;
+    QStringList m_BallImagePaths;
     QHash<int, QByteArray> m_RoleNames;
-
 };
 

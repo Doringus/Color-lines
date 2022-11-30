@@ -7,9 +7,9 @@ TableView {
     delegate: Rectangle {
         implicitHeight: control.height / control.rows
         implicitWidth: control.width / control.columns
-        Text {
+        Image {
             anchors.fill: parent
-            text: model.icon
+            source: model.icon
         }
     }
 }
