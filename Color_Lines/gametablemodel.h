@@ -31,6 +31,7 @@ public:
 
     void placeBall(int row, int col, int ball) noexcept;
 private:
+    void removeLines() noexcept;
     void computerTurn(const QList<int>& balls) noexcept;
     QList<int> generateBallsForComputerTurn() noexcept;
     QList<QPair<int, int>> getFreeCellsIndices() const noexcept;
@@ -38,8 +39,15 @@ private:
 signals:
 
 private:
+    struct userTurn_t {
+        int selectedBall;
+        int row;
+        int col;
+    };
+
+private:
     int m_RowsCount, m_ColumnsCount;
-    int m_SelectedBall;
+    userTurn_t m_UserTurn;
     QList<QList<int>> m_Data;
     QStringList m_BallImagePaths;
     QHash<int, QByteArray> m_RoleNames;

@@ -1,7 +1,7 @@
 #include "gametablemodel.h"
 
 GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent), m_RowsCount(ROWS_COUNT), m_ColumnsCount(COLUMNS_COUNT) {
-    m_SelectedBall = 0;
+    m_UserTurn = {0, 0, 0};
     m_RoleNames[IconRole] = "icon";
     m_BallImagePaths << "" << "qrc:/res/black.png" << "qrc:/res/red.png" << "qrc:/res/yellow.png";
 
@@ -16,7 +16,13 @@ GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent), m_
         column.clear();
     }
     // Place initial balls
-    computerTurn(generateBallsForComputerTurn());
+    //computerTurn(generateBallsForComputerTurn());
+    placeBall(0, 3, 1);
+    placeBall(0, 4, 1);
+    placeBall(0, 5, 1);
+    placeBall(0, 6, 1);
+    placeBall(0, 7, 1);
+    placeBall(0, 8, 1);
 }
 
 int GameTableModel::rowCount(const QModelIndex& parent) const noexcept {
@@ -56,16 +62,18 @@ QModelIndex GameTableModel::parent(const QModelIndex& index) const {
 }
 
 void GameTableModel::cellClicked(int row, int column) {
-    if(m_SelectedBall != 0 && m_Data.at(row).at(column) == 0) {
-        placeBall(row, column, m_SelectedBall);
+    if(m_UserTurn.selectedBall != 0 && m_Data.at(row).at(column) == 0) {
         // Check if we can move ball
         // Move ball
+        placeBall(row, column, m_UserTurn.selectedBall);
+        placeBall(m_UserTurn.row, m_UserTurn.col, 0);
         // Check lines
+        removeLines();
         // Computer make turn
         computerTurn(generateBallsForComputerTurn());
-        m_SelectedBall = 0;
+        m_UserTurn.selectedBall = 0;
     } else {
-        m_SelectedBall = m_Data.at(row).at(column);
+        m_UserTurn = {m_Data.at(row).at(column), row, column};
     }
 }
 
@@ -73,6 +81,71 @@ void GameTableModel::placeBall(int row, int col, int ball) noexcept {
     m_Data[row][col] = ball;
     auto index = createIndex(row, col);
     emit dataChanged(index, index, {IconRole});
+}
+
+void GameTableModel::removeLines() noexcept {
+    const int minLineLength = 5;
+    QList<QList<int>> templateField = m_Data;
+
+    auto removeRow = [this](int row, int startIndex, int size) {
+        for(int i = startIndex; i < startIndex + size; ++i) {
+            placeBall(row, i, 0);
+        }
+    };
+    // Checking for rows
+    for(int row = 0; row < ROWS_COUNT; ++row) {
+        int ball = templateField.at(row).at(0);
+        int lineSize = 1;
+        int lineStartIndex = 0;
+        for(int col = 1; col < COLUMNS_COUNT; ++col) {
+            if(templateField.at(row).at(col) != ball) {
+                if(lineSize >= minLineLength && ball != 0) {
+                    removeRow(row, lineStartIndex, lineSize);
+                }
+                lineSize = 1;
+                lineStartIndex = col;
+                ball = templateField.at(row).at(col);
+            } else {
+                lineSize++;
+            }
+        }
+
+        if(lineSize >= minLineLength && ball != 0) {
+            removeRow(row, lineStartIndex, lineSize);
+        }
+    }
+
+    auto removeColumn = [this](int col, int startIndex, int size) {
+        for(int i = startIndex; i < startIndex + size; ++i) {
+            placeBall(i, col, 0);
+        }
+    };
+
+    // Checking for columns
+    for(int col = 0; col < COLUMNS_COUNT; ++col) {
+        int ball = templateField.at(0).at(col);
+        int lineSize = 1;
+        int lineStartIndex = 0;
+        for(int row = 1; row < ROWS_COUNT; ++row) {
+            if(templateField.at(row).at(col) == 0) {
+                continue;
+            }
+            if(templateField.at(row).at(col) != ball) {
+                if(lineSize >= minLineLength) {
+                    removeColumn(col, lineStartIndex, lineSize);
+                }
+                lineSize = 1;
+                lineStartIndex = row;
+                ball = templateField.at(row).at(col);
+            } else {
+                lineSize++;
+            }
+        }
+
+        if(lineSize >= minLineLength) {
+            removeColumn(col, lineStartIndex, lineSize);
+        }
+    }
 }
 
 void GameTableModel::computerTurn(const QList<int>& balls) noexcept {
