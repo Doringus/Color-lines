@@ -1,5 +1,9 @@
 #include "gametablemodel.h"
 
+#include "pathfinder.h"
+
+#include <QDebug>
+
 GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent), m_RowsCount(ROWS_COUNT), m_ColumnsCount(COLUMNS_COUNT) {
     m_UserTurn = {0, 0, 0};
     m_RoleNames[IconRole] = "icon";
@@ -16,13 +20,7 @@ GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent), m_
         column.clear();
     }
     // Place initial balls
-    //computerTurn(generateBallsForComputerTurn());
-    placeBall(0, 3, 1);
-    placeBall(0, 4, 1);
-    placeBall(0, 5, 1);
-    placeBall(0, 6, 1);
-    placeBall(0, 7, 1);
-    placeBall(0, 8, 1);
+    computerTurn(generateBallsForComputerTurn());
 }
 
 int GameTableModel::rowCount(const QModelIndex& parent) const noexcept {
@@ -64,14 +62,16 @@ QModelIndex GameTableModel::parent(const QModelIndex& index) const {
 void GameTableModel::cellClicked(int row, int column) {
     if(m_UserTurn.selectedBall != 0 && m_Data.at(row).at(column) == 0) {
         // Check if we can move ball
-        // Move ball
-        placeBall(row, column, m_UserTurn.selectedBall);
-        placeBall(m_UserTurn.row, m_UserTurn.col, 0);
-        // Check lines
-        removeLines();
-        // Computer make turn
-        computerTurn(generateBallsForComputerTurn());
-        m_UserTurn.selectedBall = 0;
+        if(canBuildPath(m_Data, {m_UserTurn.row, m_UserTurn.col}, {row, column})) {
+            // Move ball
+            placeBall(row, column, m_UserTurn.selectedBall);
+            placeBall(m_UserTurn.row, m_UserTurn.col, 0);
+            // Check lines
+            removeLines();
+            // Computer make turn
+            computerTurn(generateBallsForComputerTurn());
+            m_UserTurn.selectedBall = 0;
+        }
     } else {
         m_UserTurn = {m_Data.at(row).at(column), row, column};
     }
