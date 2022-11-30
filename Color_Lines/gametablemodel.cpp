@@ -6,8 +6,9 @@
 
 GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent), m_RowsCount(ROWS_COUNT), m_ColumnsCount(COLUMNS_COUNT) {
     m_UserTurn = {0, 0, 0};
+    m_Score = 0;
     m_RoleNames[IconRole] = "icon";
-    m_BallImagePaths << "" << "qrc:/res/black.png" << "qrc:/res/red.png" << "qrc:/res/yellow.png";
+    m_BallImagePaths << "" << "qrc:/res/black.png" << "qrc:/res/red.png" << "qrc:/res/yellow.png" << "qrc:/res/green.png";
 
     const int emptyImageIndex = 0;
     QList<int> column;
@@ -66,11 +67,13 @@ void GameTableModel::cellClicked(int row, int column) {
             // Move ball
             placeBall(row, column, m_UserTurn.selectedBall);
             placeBall(m_UserTurn.row, m_UserTurn.col, 0);
+            m_UserTurn.selectedBall = 0;
             // Check lines
             removeLines();
             // Computer make turn
-            computerTurn(generateBallsForComputerTurn());
-            m_UserTurn.selectedBall = 0;
+            if(!computerTurn(generateBallsForComputerTurn())) {
+                // game over
+            }
         }
     } else {
         m_UserTurn = {m_Data.at(row).at(column), row, column};
@@ -101,6 +104,7 @@ void GameTableModel::removeLines() noexcept {
             if(templateField.at(row).at(col) != ball) {
                 if(lineSize >= minLineLength && ball != 0) {
                     removeRow(row, lineStartIndex, lineSize);
+                    m_Score += lineSize;
                 }
                 lineSize = 1;
                 lineStartIndex = col;
@@ -112,6 +116,7 @@ void GameTableModel::removeLines() noexcept {
 
         if(lineSize >= minLineLength && ball != 0) {
             removeRow(row, lineStartIndex, lineSize);
+            m_Score += lineSize;
         }
     }
 
@@ -133,6 +138,7 @@ void GameTableModel::removeLines() noexcept {
             if(templateField.at(row).at(col) != ball) {
                 if(lineSize >= minLineLength) {
                     removeColumn(col, lineStartIndex, lineSize);
+                    m_Score += lineSize;
                 }
                 lineSize = 1;
                 lineStartIndex = row;
@@ -144,12 +150,16 @@ void GameTableModel::removeLines() noexcept {
 
         if(lineSize >= minLineLength) {
             removeColumn(col, lineStartIndex, lineSize);
+            m_Score += lineSize;
         }
     }
 }
 
-void GameTableModel::computerTurn(const QList<int>& balls) noexcept {
+bool GameTableModel::computerTurn(const QList<int>& balls) noexcept {
     QList<QPair<int, int>> freeCells = getFreeCellsIndices();
+    if(freeCells.size() < 3) {
+        return false;
+    }
     std::for_each(balls.begin(), balls.end(), [this, &freeCells](const int& ball){
         int cellIndex = m_RandomGenerator.generate(0, freeCells.size() - 1);
         const int row = freeCells.at(cellIndex).first;
@@ -157,6 +167,7 @@ void GameTableModel::computerTurn(const QList<int>& balls) noexcept {
         placeBall(row, col, ball);
         freeCells.removeAt(cellIndex);
     });
+    return true;
 }
 
 QList<int> GameTableModel::generateBallsForComputerTurn() noexcept {

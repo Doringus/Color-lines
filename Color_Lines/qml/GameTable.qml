@@ -20,14 +20,18 @@ TableView {
         }
 
         Image {
+            id: icon
             anchors.fill: parent
             source: model.icon
+            onSourceChanged: console.log(source)
         }
         MouseArea {
             anchors.fill: parent
+            hoverEnabled: true
             onClicked: {
                 control.itemClicked(row, column)
             }
+            cursorShape: model.icon === "" ? "ArrowCursor" : "PointingHandCursor"
         }
     }
 }
