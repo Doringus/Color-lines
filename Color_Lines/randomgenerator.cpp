@@ -1,6 +1,6 @@
 #include "randomgenerator.h"
 
-RandomGenerator::RandomGenerator(std::random_device randomDevice) : m_Generator(randomDevice()) {
+RandomGenerator::RandomGenerator(unsigned int seed) : m_Generator(seed) {
 
 }
 

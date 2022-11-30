@@ -27,10 +27,18 @@ public:
     QModelIndex index(int row, int column, const QModelIndex& parent = QModelIndex()) const override;
     QModelIndex parent(const QModelIndex& index) const override;
 
+    Q_INVOKABLE void cellClicked(int row, int column);
+
+private:
+    void placeBalls(const QList<int>& balls) noexcept;
+    QList<int> generateBallsForComputerTurn() noexcept;
+    QList<QPair<int, int>> getFreeCellsIndices() const noexcept;
+
 signals:
 
 private:
     int m_RowsCount, m_ColumnsCount;
+    bool m_IsFirstClick;
     QList<QList<int>> m_Data;
     QStringList m_BallImagePaths;
     QHash<int, QByteArray> m_RoleNames;

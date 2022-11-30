@@ -1,10 +1,11 @@
 #pragma once
 
 #include <random>
+#include <chrono>
 
 class RandomGenerator {
 public:
-    explicit RandomGenerator(std::random_device randomDevice = std::random_device());
+    explicit RandomGenerator(unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count());
 
     int generate(int bottom, int top) noexcept;
 

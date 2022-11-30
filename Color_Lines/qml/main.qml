@@ -13,8 +13,13 @@ Window {
         id: gameTable
         width: 640
         height: 480
+
         model: GameTableModel {
 
+        }
+
+        onItemClicked: {
+            model.cellClicked(row, column)
         }
     }
 }
