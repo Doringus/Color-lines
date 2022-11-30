@@ -3,6 +3,8 @@
 #include <QObject>
 #include <QAbstractItemModel>
 
+#include "randomgenerator.h"
+
 constexpr int ROWS_COUNT = 9;
 constexpr int COLUMNS_COUNT = 9;
 
@@ -32,5 +34,6 @@ private:
     QList<QList<int>> m_Data;
     QStringList m_BallImagePaths;
     QHash<int, QByteArray> m_RoleNames;
+    RandomGenerator m_RandomGenerator;
 };
 

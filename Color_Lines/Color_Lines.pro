@@ -5,7 +5,8 @@ CONFIG += c++17
 
 SOURCES += \
         gametablemodel.cpp \
-        main.cpp
+        main.cpp \
+        randomgenerator.cpp
 
 RESOURCES += qml.qrc
 
@@ -21,4 +22,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    gametablemodel.h
+    gametablemodel.h \
+    randomgenerator.h

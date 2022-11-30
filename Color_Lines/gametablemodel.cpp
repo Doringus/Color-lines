@@ -9,7 +9,7 @@ GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent), m_
     column.reserve(m_ColumnsCount);
     for(int row = 0; row < m_RowsCount; ++row) {
         for(int col = 0; col < m_ColumnsCount; ++col) {
-            column.append(emptyImageIndex);
+            column.append(m_RandomGenerator.generate(0, 3));
         }
         m_Data.append(column);
         column.clear();
