@@ -74,14 +74,14 @@ bool GameTableModel::setData(const QModelIndex& index, const QVariant& value, in
     }
     switch (role) {
         case IconRole: {
-            return false;
+            break;
         }
         case StateRole: {
             m_TableItemsStates[index.row()][index.column()] = value.toInt();
             break;
         }
     }
-    emit dataChanged(index, index, {StateRole});
+    emit dataChanged(index, index, {role});
     return true;
 }
 
@@ -103,22 +103,16 @@ void GameTableModel::cellClicked(int row, int column) {
     if(m_UserTurn.selectedBall != 0 && m_Table->getBall(row, column) == 0) {
         if(m_Table->moveBall({m_UserTurn.row, m_UserTurn.col}, {row, column}, m_UserTurn.selectedBall)) {
             // animate move
-            m_TableItemsStates[row][column] = CellState::STATE_CELL_CREATED; // animate later
-            m_TableItemsStates[m_UserTurn.row][m_UserTurn.col] = CellState::STATE_CELL_REMOVED; // animate later
-            emit dataChanged(createIndex(row, column),createIndex(row, column), {IconRole, StateRole});
+            m_TableItemsStates[row][column] = CellState::STATE_CELL_CREATED;
+            m_TableItemsStates[m_UserTurn.row][m_UserTurn.col] = CellState::STATE_CELL_REMOVED;
+            emit itemMoved(row, column);
             emit dataChanged(createIndex(m_UserTurn.row, m_UserTurn.col), createIndex(m_UserTurn.row, m_UserTurn.col), {IconRole, StateRole});
-            m_UserTurn.selectedBall = 0;
-
-            setScore(m_Score + m_Table->removeLines(5));
-
-            if(!computerTurn(generateBallsForComputerTurn())) {
-                // game over
-            }
-            setScore(m_Score + m_Table->removeLines(5));
-
+            m_UserTurn.row = row;
+            m_UserTurn.col = column;
         }
     } else {
         m_UserTurn = {m_Table->getBall(row, column), row, column};
+        emit itemClicked(row, column, m_BallImagePaths.at(m_Table->getBall(row, column)));
     }
 }
 
@@ -134,6 +128,20 @@ void GameTableModel::startNewGame() noexcept {
     setScore(0);
 
     computerTurn(generateBallsForComputerTurn());
+}
+
+void GameTableModel::fakeItemMoved() noexcept {
+    emit dataChanged(createIndex(m_UserTurn.row, m_UserTurn.col), createIndex(m_UserTurn.row, m_UserTurn.col), {IconRole, StateRole});
+
+    m_UserTurn.selectedBall = 0;
+
+    setScore(m_Score + m_Table->removeLines(5));
+
+    if(!computerTurn(generateBallsForComputerTurn())) {
+        // game over
+    }
+    setScore(m_Score + m_Table->removeLines(5));
+
 }
 
 bool GameTableModel::computerTurn(const QList<int>& balls) noexcept {

@@ -47,6 +47,7 @@ public:
 
     Q_INVOKABLE void cellClicked(int row, int column);
     Q_INVOKABLE void startNewGame() noexcept;
+    Q_INVOKABLE void fakeItemMoved() noexcept;
 private:
     bool computerTurn(const QList<int>& balls) noexcept;
     QList<int> generateBallsForComputerTurn() noexcept;
@@ -55,6 +56,8 @@ private:
     void setScore(int score) noexcept;
 signals:
     void scoreChanged();
+    void itemMoved(int toRow, int toCol);
+    void itemClicked(int row, int col, const QString& ballImage);
 private:
     struct userTurn_t {
         int selectedBall;

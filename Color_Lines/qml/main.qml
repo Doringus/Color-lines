@@ -22,6 +22,8 @@ Window {
 
             model: GameTableModel {
                 id: gameTableModel
+                onItemMoved: gameTable.animateFakeItem(toRow, toCol)
+                onItemClicked: gameTable.moveFakeItem(row, col, ballImage)
             }
 
             onItemClicked: {
