@@ -42,9 +42,13 @@ void GameSaver::saveGame(const gameRecord_t& record) {
                   " VALUES(?, ?, ?)");
     for(size_t row = 0; row < record.table->getSize(); ++row) {
         for(size_t col = 0; col < record.table->getSize(); ++col) {
-            rows << row;
-            cols << col;
-            balls << record.table->getBall(row, col);
+            int ball = record.table->getBall(row, col);
+            if(ball != 0) {
+                rows << row;
+                cols << col;
+                balls << ball;
+            }
+
         }
     }
     query.addBindValue(rows);
