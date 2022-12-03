@@ -4,6 +4,7 @@ CONFIG += c++17
 
 
 SOURCES += \
+        gametable.cpp \
         gametablemodel.cpp \
         main.cpp \
         randomgenerator.cpp
@@ -22,6 +23,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
+    gametable.h \
     gametablemodel.h \
     pathfinder.h \
     randomgenerator.h

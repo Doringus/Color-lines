@@ -4,34 +4,44 @@
 
 #include <QDebug>
 
-GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent), m_RowsCount(ROWS_COUNT), m_ColumnsCount(COLUMNS_COUNT) {
+GameTableModel::GameTableModel(QObject *parent)
+    : QAbstractItemModel(parent), m_Table(9) {
+
+    connect(&m_Table, &GameTable::ballRemoved, [this](int row, int col){
+        auto index = createIndex(row, col);
+        m_TableItemsStates[row][col] = CellState::STATE_CELL_REMOVED;
+        emit dataChanged(index, index, {StateRole});
+    });
+
     m_UserTurn = {0, 0, 0};
     m_Score = 0;
-    m_RoleNames[IconRole] = "icon";
-    m_BallImagePaths << "" << "qrc:/res/black.png" << "qrc:/res/red.png" << "qrc:/res/yellow.png" << "qrc:/res/green.png";
 
-    const int emptyImageIndex = 0;
+    m_RoleNames[IconRole] = "icon";
+    m_RoleNames[StateRole] = "state";
     QList<int> column;
-    column.reserve(m_ColumnsCount);
-    for(int row = 0; row < m_RowsCount; ++row) {
-        for(int col = 0; col < m_ColumnsCount; ++col) {
-            column.append(emptyImageIndex);
+    column.reserve(9);
+    for(size_t row = 0; row < m_Table.getSize(); ++row) {
+        for(size_t col = 0; col < m_Table.getSize(); ++col) {
+            column.append(CellState::EMPTY_STATE);
         }
-        m_Data.append(column);
+        m_TableItemsStates.append(column);
         column.clear();
     }
+
+    m_BallImagePaths << "" << "qrc:/res/black.png" << "qrc:/res/red.png" << "qrc:/res/yellow.png" << "qrc:/res/green.png";
+
     // Place initial balls
     computerTurn(generateBallsForComputerTurn());
 }
 
 int GameTableModel::rowCount(const QModelIndex& parent) const noexcept {
     Q_UNUSED(parent);
-    return m_RowsCount;
+    return m_Table.getSize();
 }
 
 int GameTableModel::columnCount(const QModelIndex& parent) const noexcept {
     Q_UNUSED(parent)
-    return m_ColumnsCount;
+    return m_Table.getSize();
 }
 
 QVariant GameTableModel::data(const QModelIndex& index, int role) const {
@@ -40,10 +50,30 @@ QVariant GameTableModel::data(const QModelIndex& index, int role) const {
     }
     switch (role) {
         case IconRole: {
-            return m_BallImagePaths.at(m_Data.at(index.row()).at(index.column()));
+            return m_BallImagePaths.at(m_Table.getBall(index.row(), index.column()));
+        }
+        case StateRole: {
+            return m_TableItemsStates.at(index.row()).at(index.column());
         }
     }
     return 0;
+}
+
+bool GameTableModel::setData(const QModelIndex& index, const QVariant& value, int role) noexcept {
+    if (!index.isValid()) {
+            return false;
+    }
+    switch (role) {
+        case IconRole: {
+            return false;
+        }
+        case StateRole: {
+            m_TableItemsStates[index.row()][index.column()] = value.toInt();
+            break;
+        }
+    }
+    emit dataChanged(index, index, {StateRole});
+    return true;
 }
 
 QHash<int, QByteArray> GameTableModel::roleNames() const noexcept {
@@ -61,97 +91,24 @@ QModelIndex GameTableModel::parent(const QModelIndex& index) const {
 }
 
 void GameTableModel::cellClicked(int row, int column) {
-    if(m_UserTurn.selectedBall != 0 && m_Data.at(row).at(column) == 0) {
-        // Check if we can move ball
-        if(canBuildPath(m_Data, {m_UserTurn.row, m_UserTurn.col}, {row, column})) {
-            // Move ball
-            placeBall(row, column, m_UserTurn.selectedBall);
-            placeBall(m_UserTurn.row, m_UserTurn.col, 0);
+    if(m_UserTurn.selectedBall != 0 && m_Table.getBall(row, column) == 0) {
+        if(m_Table.moveBall({m_UserTurn.row, m_UserTurn.col}, {row, column}, m_UserTurn.selectedBall)) {
+            // animate move
+            m_TableItemsStates[row][column] = CellState::STATE_CELL_CREATED;
+            m_TableItemsStates[m_UserTurn.row][m_UserTurn.col] = CellState::STATE_CELL_REMOVED;
+            emit dataChanged(createIndex(row, column),createIndex(row, column), {IconRole, StateRole});
+            emit dataChanged(createIndex(m_UserTurn.row, m_UserTurn.col), createIndex(m_UserTurn.row, m_UserTurn.col), {IconRole, StateRole});
             m_UserTurn.selectedBall = 0;
-            // Check lines
-            removeLines();
-            // Computer make turn
+
+            m_Table.removeLines(5);
+
             if(!computerTurn(generateBallsForComputerTurn())) {
                 // game over
             }
+            m_Table.removeLines(5);
         }
     } else {
-        m_UserTurn = {m_Data.at(row).at(column), row, column};
-    }
-}
-
-void GameTableModel::placeBall(int row, int col, int ball) noexcept {
-    m_Data[row][col] = ball;
-    auto index = createIndex(row, col);
-    emit dataChanged(index, index, {IconRole});
-}
-
-void GameTableModel::removeLines() noexcept {
-    const int minLineLength = 5;
-    QList<QList<int>> templateField = m_Data;
-
-    auto removeRow = [this](int row, int startIndex, int size) {
-        for(int i = startIndex; i < startIndex + size; ++i) {
-            placeBall(row, i, 0);
-        }
-    };
-    // Checking for rows
-    for(int row = 0; row < ROWS_COUNT; ++row) {
-        int ball = templateField.at(row).at(0);
-        int lineSize = 1;
-        int lineStartIndex = 0;
-        for(int col = 1; col < COLUMNS_COUNT; ++col) {
-            if(templateField.at(row).at(col) != ball) {
-                if(lineSize >= minLineLength && ball != 0) {
-                    removeRow(row, lineStartIndex, lineSize);
-                    m_Score += lineSize;
-                }
-                lineSize = 1;
-                lineStartIndex = col;
-                ball = templateField.at(row).at(col);
-            } else {
-                lineSize++;
-            }
-        }
-
-        if(lineSize >= minLineLength && ball != 0) {
-            removeRow(row, lineStartIndex, lineSize);
-            m_Score += lineSize;
-        }
-    }
-
-    auto removeColumn = [this](int col, int startIndex, int size) {
-        for(int i = startIndex; i < startIndex + size; ++i) {
-            placeBall(i, col, 0);
-        }
-    };
-
-    // Checking for columns
-    for(int col = 0; col < COLUMNS_COUNT; ++col) {
-        int ball = templateField.at(0).at(col);
-        int lineSize = 1;
-        int lineStartIndex = 0;
-        for(int row = 1; row < ROWS_COUNT; ++row) {
-            if(templateField.at(row).at(col) == 0) {
-                continue;
-            }
-            if(templateField.at(row).at(col) != ball) {
-                if(lineSize >= minLineLength) {
-                    removeColumn(col, lineStartIndex, lineSize);
-                    m_Score += lineSize;
-                }
-                lineSize = 1;
-                lineStartIndex = row;
-                ball = templateField.at(row).at(col);
-            } else {
-                lineSize++;
-            }
-        }
-
-        if(lineSize >= minLineLength) {
-            removeColumn(col, lineStartIndex, lineSize);
-            m_Score += lineSize;
-        }
+        m_UserTurn = {m_Table.getBall(row, column), row, column};
     }
 }
 
@@ -164,7 +121,10 @@ bool GameTableModel::computerTurn(const QList<int>& balls) noexcept {
         int cellIndex = m_RandomGenerator.generate(0, freeCells.size() - 1);
         const int row = freeCells.at(cellIndex).first;
         const int col = freeCells.at(cellIndex).second;
-        placeBall(row, col, ball);
+        m_Table.putBall(row, col, ball);
+        m_TableItemsStates[row][col] = CellState::STATE_CELL_CREATED;
+        auto index = createIndex(row, col);
+        emit dataChanged(index, index, {IconRole, StateRole});
         freeCells.removeAt(cellIndex);
     });
     return true;
@@ -183,9 +143,9 @@ QList<QPair<int, int>> GameTableModel::getFreeCellsIndices() const noexcept {
     QList<QPair<int, int>> freeCellsIndices;
     const int emptyImageIndex = 0;
 
-    for(int row = 0; row < m_RowsCount; ++row) {
-        for(int col = 0; col < m_ColumnsCount; ++col) {
-            if(m_Data.at(row).at(col) == emptyImageIndex) {
+    for(size_t row = 0; row < m_Table.getSize(); ++row) {
+        for(size_t col = 0; col < m_Table.getSize(); ++col) {
+            if(m_Table.getBall(row, col) == emptyImageIndex) {
                 freeCellsIndices.append({row, col});
             }
         }

@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
     qmlRegisterType<GameTableModel>("GameModel", 1, 0, "GameTableModel");
+    qmlRegisterUncreatableMetaObject(CellState::staticMetaObject, "GameModel", 1, 0, "CellState", "Uncreatable enum");
     engine.load(url);
 
     return app.exec();

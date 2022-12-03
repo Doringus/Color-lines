@@ -11,34 +11,34 @@ namespace  {
     using Table = QList<QList<T>>;
 
     std::optional<QPair<int, int>> canMoveRight(const Table<int>& table,  const QPair<int, int>& from, int freeCellValue) noexcept {
-        if(from.second == table.at(from.first).size() - 1 || table.at(from.first).at(from.second + 1) != 0) {
+        if(from.second == table.at(from.first).size() - 1 || table.at(from.first).at(from.second + 1) != freeCellValue) {
             return std::nullopt;
         }
         return {{from.first, from.second + 1}};
     }
 
     std::optional<QPair<int, int>> canMoveTop(const Table<int>& table,  const QPair<int, int>& from, int freeCellValue) noexcept {
-        if(from.first == 0 || table.at(from.first - 1).at(from.second) != 0) {
+        if(from.first == 0 || table.at(from.first - 1).at(from.second) != freeCellValue) {
             return std::nullopt;
         }
         return {{from.first - 1, from.second}};
     }
 
     std::optional<QPair<int, int>> canMoveLeft(const Table<int>& table,  const QPair<int, int>& from, int freeCellValue) noexcept {
-        if(from.second == 0 || table.at(from.first).at(from.second - 1) != 0) {
+        if(from.second == 0 || table.at(from.first).at(from.second - 1) != freeCellValue) {
             return std::nullopt;
         }
         return {{from.first, from.second - 1}};
     }
 
     std::optional<QPair<int, int>> canMoveBottom(const Table<int>& table,  const QPair<int, int>& from, int freeCellValue) noexcept {
-        if(from.first == table.size() - 1 || table.at(from.first + 1).at(from.second) != 0) {
+        if(from.first == table.size() - 1 || table.at(from.first + 1).at(from.second) != freeCellValue) {
             return std::nullopt;
         }
         return {{from.first + 1, from.second}};
     }
 
-    bool canBuildPath(Table<int> table, const QPair<int, int>& from, const QPair<int, int>& to, int freeCellValue = 0) {
+    bool canBuildPath(Table<int> table, const QPair<int, int>& from, const QPair<int, int>& to, int freeCellValue = 0) noexcept {
         QQueue<QPair<int, int>> cellsQueue;
         cellsQueue.enqueue(from);
         const int visitedSign = -1; // if cell was visited it has -1 value
