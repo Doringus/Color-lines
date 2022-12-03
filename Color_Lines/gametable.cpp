@@ -14,6 +14,14 @@ GameTable::GameTable(size_t size, QObject* parent) noexcept : QObject(parent), m
     }
 }
 
+void GameTable::resetTable() noexcept {
+    for(size_t row = 0; row < m_Data.size(); ++row) {
+        std::for_each(m_Data[row].begin(), m_Data[row].end(), [](int& item){
+            item = 0;
+        });
+    }
+}
+
 void GameTable::putBall(size_t row, size_t col, int ball) noexcept {
     if(row >= m_Data.size() || col >= m_Data.size()) {
         return;

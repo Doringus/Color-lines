@@ -5,7 +5,7 @@
 #include <QDebug>
 
 GameTableModel::GameTableModel(QObject *parent)
-    : QAbstractItemModel(parent), m_Table(9) {
+    : QAbstractItemModel(parent), m_Table(TABLE_SIZE) {
 
     connect(&m_Table, &GameTable::ballRemoved, [this](int row, int col){
         auto index = createIndex(row, col);
@@ -19,7 +19,7 @@ GameTableModel::GameTableModel(QObject *parent)
     m_RoleNames[IconRole] = "icon";
     m_RoleNames[StateRole] = "state";
     QList<int> column;
-    column.reserve(9);
+    column.reserve(TABLE_SIZE);
     for(size_t row = 0; row < m_Table.getSize(); ++row) {
         for(size_t col = 0; col < m_Table.getSize(); ++col) {
             column.append(CellState::EMPTY_STATE);
@@ -94,22 +94,37 @@ void GameTableModel::cellClicked(int row, int column) {
     if(m_UserTurn.selectedBall != 0 && m_Table.getBall(row, column) == 0) {
         if(m_Table.moveBall({m_UserTurn.row, m_UserTurn.col}, {row, column}, m_UserTurn.selectedBall)) {
             // animate move
-            m_TableItemsStates[row][column] = CellState::STATE_CELL_CREATED;
-            m_TableItemsStates[m_UserTurn.row][m_UserTurn.col] = CellState::STATE_CELL_REMOVED;
+            m_TableItemsStates[row][column] = CellState::STATE_CELL_CREATED; // animate later
+            m_TableItemsStates[m_UserTurn.row][m_UserTurn.col] = CellState::STATE_CELL_REMOVED; // animate later
             emit dataChanged(createIndex(row, column),createIndex(row, column), {IconRole, StateRole});
             emit dataChanged(createIndex(m_UserTurn.row, m_UserTurn.col), createIndex(m_UserTurn.row, m_UserTurn.col), {IconRole, StateRole});
             m_UserTurn.selectedBall = 0;
 
-            m_Table.removeLines(5);
+            setScore(m_Score + m_Table.removeLines(5));
 
             if(!computerTurn(generateBallsForComputerTurn())) {
                 // game over
             }
-            m_Table.removeLines(5);
+            setScore(m_Score + m_Table.removeLines(5));
+
         }
     } else {
         m_UserTurn = {m_Table.getBall(row, column), row, column};
     }
+}
+
+void GameTableModel::startNewGame() noexcept {
+    beginResetModel();
+    for(size_t row = 0; row < m_TableItemsStates.size(); ++row) {
+        std::for_each(m_TableItemsStates[row].begin(), m_TableItemsStates[row].begin(), [](int& item){
+            item = CellState::EMPTY_STATE;
+        });
+    }
+    m_Table.resetTable();
+    endResetModel();
+    setScore(0);
+
+    computerTurn(generateBallsForComputerTurn());
 }
 
 bool GameTableModel::computerTurn(const QList<int>& balls) noexcept {
@@ -151,4 +166,11 @@ QList<QPair<int, int>> GameTableModel::getFreeCellsIndices() const noexcept {
         }
     }
     return freeCellsIndices;
+}
+
+void GameTableModel::setScore(int score) noexcept {
+    if(m_Score != score) {
+        m_Score = score;
+        emit scoreChanged();
+    }
 }

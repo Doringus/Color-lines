@@ -8,6 +8,8 @@ class GameTable : public QObject {
 public:
     GameTable(size_t size, QObject* parent = nullptr) noexcept;
 
+    void resetTable() noexcept;
+
     void putBall(size_t row, size_t col, int ball) noexcept;
     int getBall(int row, int col) const noexcept;
     bool moveBall(const QPair<int, int>& from, const QPair<int, int>& to, int ball) noexcept;

@@ -8,6 +8,7 @@
 
 constexpr int ROWS_COUNT = 9;
 constexpr int COLUMNS_COUNT = 9;
+constexpr int TABLE_SIZE = 9;
 
 namespace CellState {
     Q_NAMESPACE
@@ -23,6 +24,8 @@ namespace CellState {
 
 class GameTableModel : public QAbstractItemModel {
     Q_OBJECT
+
+    Q_PROPERTY(int score MEMBER m_Score NOTIFY scoreChanged)
 public:
 
     enum Roles {
@@ -43,13 +46,15 @@ public:
     QModelIndex parent(const QModelIndex& index) const override;
 
     Q_INVOKABLE void cellClicked(int row, int column);
+    Q_INVOKABLE void startNewGame() noexcept;
 private:
     bool computerTurn(const QList<int>& balls) noexcept;
     QList<int> generateBallsForComputerTurn() noexcept;
     QList<QPair<int, int>> getFreeCellsIndices() const noexcept;
 
+    void setScore(int score) noexcept;
 signals:
-
+    void scoreChanged();
 private:
     struct userTurn_t {
         int selectedBall;
