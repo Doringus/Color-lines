@@ -1,9 +1,11 @@
-QT += quick
+QT += quick sql
 
 CONFIG += c++17
 
 
 SOURCES += \
+        gameloader.cpp \
+        gamesaver.cpp \
         gametable.cpp \
         gametablemodel.cpp \
         main.cpp \
@@ -23,6 +25,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
+    gameloader.h \
+    gamesaver.h \
     gametable.h \
     gametablemodel.h \
     pathfinder.h \

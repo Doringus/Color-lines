@@ -2,12 +2,11 @@
 
 #include <QObject>
 #include <QAbstractItemModel>
+#include <memory>
 
 #include "randomgenerator.h"
 #include "gametable.h"
 
-constexpr int ROWS_COUNT = 9;
-constexpr int COLUMNS_COUNT = 9;
 constexpr int TABLE_SIZE = 9;
 
 namespace CellState {
@@ -35,6 +34,7 @@ public:
 
 public:
     explicit GameTableModel(QObject *parent = nullptr);
+    ~GameTableModel();
 
     int rowCount(const QModelIndex& parent) const noexcept override;
     int columnCount(const QModelIndex& parent) const noexcept override;
@@ -64,7 +64,7 @@ private:
 
 private:
     int m_Score;
-    GameTable m_Table;
+    std::unique_ptr<GameTable> m_Table;
     userTurn_t m_UserTurn;
     QList<QList<int>> m_TableItemsStates;
     QStringList m_BallImagePaths;

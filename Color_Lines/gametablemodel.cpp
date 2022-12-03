@@ -1,27 +1,31 @@
 #include "gametablemodel.h"
 
 #include "pathfinder.h"
+#include "gamesaver.h"
+#include "gameloader.h"
 
 #include <QDebug>
 
-GameTableModel::GameTableModel(QObject *parent)
-    : QAbstractItemModel(parent), m_Table(TABLE_SIZE) {
+GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent) {
+    GameLoader loader("game.db");
+    auto [table, score] = loader.load();
+    m_Table = std::move(table);
+    setScore(score);
 
-    connect(&m_Table, &GameTable::ballRemoved, [this](int row, int col){
+    connect(m_Table.get(), &GameTable::ballRemoved, [this](int row, int col){
         auto index = createIndex(row, col);
         m_TableItemsStates[row][col] = CellState::STATE_CELL_REMOVED;
         emit dataChanged(index, index, {StateRole});
     });
 
     m_UserTurn = {0, 0, 0};
-    m_Score = 0;
 
     m_RoleNames[IconRole] = "icon";
     m_RoleNames[StateRole] = "state";
     QList<int> column;
     column.reserve(TABLE_SIZE);
-    for(size_t row = 0; row < m_Table.getSize(); ++row) {
-        for(size_t col = 0; col < m_Table.getSize(); ++col) {
+    for(size_t row = 0; row < m_Table->getSize(); ++row) {
+        for(size_t col = 0; col < m_Table->getSize(); ++col) {
             column.append(CellState::EMPTY_STATE);
         }
         m_TableItemsStates.append(column);
@@ -34,14 +38,19 @@ GameTableModel::GameTableModel(QObject *parent)
     computerTurn(generateBallsForComputerTurn());
 }
 
+GameTableModel::~GameTableModel() {
+    GameSaver saver("game.db");
+    saver.saveGame({std::move(m_Table), m_Score});
+}
+
 int GameTableModel::rowCount(const QModelIndex& parent) const noexcept {
     Q_UNUSED(parent);
-    return m_Table.getSize();
+    return m_Table->getSize();
 }
 
 int GameTableModel::columnCount(const QModelIndex& parent) const noexcept {
     Q_UNUSED(parent)
-    return m_Table.getSize();
+    return m_Table->getSize();
 }
 
 QVariant GameTableModel::data(const QModelIndex& index, int role) const {
@@ -50,7 +59,7 @@ QVariant GameTableModel::data(const QModelIndex& index, int role) const {
     }
     switch (role) {
         case IconRole: {
-            return m_BallImagePaths.at(m_Table.getBall(index.row(), index.column()));
+            return m_BallImagePaths.at(m_Table->getBall(index.row(), index.column()));
         }
         case StateRole: {
             return m_TableItemsStates.at(index.row()).at(index.column());
@@ -91,8 +100,8 @@ QModelIndex GameTableModel::parent(const QModelIndex& index) const {
 }
 
 void GameTableModel::cellClicked(int row, int column) {
-    if(m_UserTurn.selectedBall != 0 && m_Table.getBall(row, column) == 0) {
-        if(m_Table.moveBall({m_UserTurn.row, m_UserTurn.col}, {row, column}, m_UserTurn.selectedBall)) {
+    if(m_UserTurn.selectedBall != 0 && m_Table->getBall(row, column) == 0) {
+        if(m_Table->moveBall({m_UserTurn.row, m_UserTurn.col}, {row, column}, m_UserTurn.selectedBall)) {
             // animate move
             m_TableItemsStates[row][column] = CellState::STATE_CELL_CREATED; // animate later
             m_TableItemsStates[m_UserTurn.row][m_UserTurn.col] = CellState::STATE_CELL_REMOVED; // animate later
@@ -100,16 +109,16 @@ void GameTableModel::cellClicked(int row, int column) {
             emit dataChanged(createIndex(m_UserTurn.row, m_UserTurn.col), createIndex(m_UserTurn.row, m_UserTurn.col), {IconRole, StateRole});
             m_UserTurn.selectedBall = 0;
 
-            setScore(m_Score + m_Table.removeLines(5));
+            setScore(m_Score + m_Table->removeLines(5));
 
             if(!computerTurn(generateBallsForComputerTurn())) {
                 // game over
             }
-            setScore(m_Score + m_Table.removeLines(5));
+            setScore(m_Score + m_Table->removeLines(5));
 
         }
     } else {
-        m_UserTurn = {m_Table.getBall(row, column), row, column};
+        m_UserTurn = {m_Table->getBall(row, column), row, column};
     }
 }
 
@@ -120,7 +129,7 @@ void GameTableModel::startNewGame() noexcept {
             item = CellState::EMPTY_STATE;
         });
     }
-    m_Table.resetTable();
+    m_Table->resetTable();
     endResetModel();
     setScore(0);
 
@@ -136,7 +145,7 @@ bool GameTableModel::computerTurn(const QList<int>& balls) noexcept {
         int cellIndex = m_RandomGenerator.generate(0, freeCells.size() - 1);
         const int row = freeCells.at(cellIndex).first;
         const int col = freeCells.at(cellIndex).second;
-        m_Table.putBall(row, col, ball);
+        m_Table->putBall(row, col, ball);
         m_TableItemsStates[row][col] = CellState::STATE_CELL_CREATED;
         auto index = createIndex(row, col);
         emit dataChanged(index, index, {IconRole, StateRole});
@@ -158,9 +167,9 @@ QList<QPair<int, int>> GameTableModel::getFreeCellsIndices() const noexcept {
     QList<QPair<int, int>> freeCellsIndices;
     const int emptyImageIndex = 0;
 
-    for(size_t row = 0; row < m_Table.getSize(); ++row) {
-        for(size_t col = 0; col < m_Table.getSize(); ++col) {
-            if(m_Table.getBall(row, col) == emptyImageIndex) {
+    for(size_t row = 0; row < m_Table->getSize(); ++row) {
+        for(size_t col = 0; col < m_Table->getSize(); ++col) {
+            if(m_Table->getBall(row, col) == emptyImageIndex) {
                 freeCellsIndices.append({row, col});
             }
         }

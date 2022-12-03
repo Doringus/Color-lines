@@ -25,7 +25,7 @@ TableView {
             id: icon
             anchors.fill: parent
             source: model.icon
-            opacity: 0
+//            opacity: 0
 
             NumberAnimation on opacity {
                 running: model.state === CellState.STATE_CELL_CREATED
