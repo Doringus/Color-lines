@@ -8,6 +8,7 @@
 
 GameTableModel::GameTableModel(QObject *parent) : QAbstractItemModel(parent) {
     GameLoader loader("game.db");
+    m_IsGameActive = true;
     auto [table, score] = loader.load();
     m_Table = std::move(table);
     setScore(score);
@@ -126,7 +127,7 @@ void GameTableModel::startNewGame() noexcept {
     m_Table->resetTable();
     endResetModel();
     setScore(0);
-
+    setIsGameActive(true);
     computerTurn(generateBallsForComputerTurn());
 }
 
@@ -138,7 +139,7 @@ void GameTableModel::fakeItemMoved() noexcept {
     setScore(m_Score + m_Table->removeLines(5));
 
     if(!computerTurn(generateBallsForComputerTurn())) {
-        // game over
+        setIsGameActive(false);
     }
     setScore(m_Score + m_Table->removeLines(5));
 
@@ -189,5 +190,12 @@ void GameTableModel::setScore(int score) noexcept {
     if(m_Score != score) {
         m_Score = score;
         emit scoreChanged();
+    }
+}
+
+void GameTableModel::setIsGameActive(bool active) noexcept {
+    if(m_IsGameActive != active) {
+        m_IsGameActive = active;
+        emit gameActiveChanged();
     }
 }

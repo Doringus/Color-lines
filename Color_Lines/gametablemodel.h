@@ -25,6 +25,7 @@ class GameTableModel : public QAbstractItemModel {
     Q_OBJECT
 
     Q_PROPERTY(int score MEMBER m_Score NOTIFY scoreChanged)
+    Q_PROPERTY(int isGameActive MEMBER m_IsGameActive NOTIFY gameActiveChanged)
 public:
 
     enum Roles {
@@ -54,8 +55,10 @@ private:
     QList<QPair<int, int>> getFreeCellsIndices() const noexcept;
 
     void setScore(int score) noexcept;
+    void setIsGameActive(bool active) noexcept;
 signals:
     void scoreChanged();
+    void gameActiveChanged();
     void itemMoved(int toRow, int toCol);
     void itemClicked(int row, int col, const QString& ballImage);
 private:
@@ -66,6 +69,7 @@ private:
     };
 
 private:
+    bool m_IsGameActive;
     int m_Score;
     std::unique_ptr<GameTable> m_Table;
     userTurn_t m_UserTurn;

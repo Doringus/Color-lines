@@ -7,6 +7,7 @@ TableView {
     id: control
 
     interactive: false
+    enabled: model.isGameActive
 
     property int cellWidth: control.width / control.columns
     property int cellHeight: control.height / control.rows
@@ -83,7 +84,7 @@ TableView {
             id: movingAnimation
 
             /// After fake animation was finished
-            /// we should hide it and show the real one
+            /// we should hide it and show the real one ball
             onFinished: {
                 fakeMovingItem.visible = false
                 control.model.fakeItemMoved()
